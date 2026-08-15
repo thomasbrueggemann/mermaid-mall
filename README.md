@@ -40,8 +40,8 @@ buy the next thing.
 
 The player can't read, so nothing important is written down:
 
-- **Missions are spoken** via the Web Speech API, in English or German
-  (auto-detected from the browser, switchable with the 🇬🇧/🇩🇪 button).
+- **Missions are spoken** via the Web Speech API. English by default; German is
+  one tap away on the 🇬🇧/🇩🇪 button and is remembered after that.
 - **The HUD is emoji and numbers only** — shop icon, item icon, price.
 - **Every shop wears its emoji on the roof**, because from an isometric camera
   the roof is what you actually see. The wall sign alone is not enough.

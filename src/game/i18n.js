@@ -72,6 +72,10 @@ const STRINGS = {
 
 const STORE_KEY = 'mermaidmall.lang';
 
+/**
+ * English is the default regardless of browser locale — German is opt-in via
+ * the flag button. Once chosen, the preference sticks across sessions.
+ */
 function detect() {
   try {
     const saved = localStorage.getItem(STORE_KEY);
@@ -79,8 +83,7 @@ function detect() {
   } catch {
     /* private mode */
   }
-  const langs = navigator.languages?.length ? navigator.languages : [navigator.language || 'en'];
-  return langs.some((l) => String(l).toLowerCase().startsWith('de')) ? 'de' : 'en';
+  return 'en';
 }
 
 export const i18n = {
