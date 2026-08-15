@@ -75,7 +75,11 @@ self.addEventListener('fetch', (event) => {
 
   // Vite emits content-hashed filenames, so these are safe to serve from cache
   // forever — a changed file arrives under a different name.
-  const immutable = /-[A-Za-z0-9_-]{8,}\.(js|css|woff2?|png|jpg|webp|svg)$/.test(url.pathname);
+  // .wasm is on the list for the ONNX runtime behind the neural voice: at 21 MB
+  // it is much too big to revalidate on every load.
+  const immutable = /-[A-Za-z0-9_-]{8,}\.(js|css|wasm|woff2?|png|jpg|webp|svg)$/.test(
+    url.pathname,
+  );
 
   event.respondWith(
     (async () => {

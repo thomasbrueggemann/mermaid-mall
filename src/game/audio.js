@@ -23,12 +23,18 @@ const CHORDS = [
   { root: 43, tones: [55, 59, 62, 65] },
 ];
 
+const MUSIC_GAIN = 0.55;
+const MUSIC_DUCKED = 0.16;
+
 export function createAudio() {
   let ctx = null;
   let master;
   let musicBus;
   let sfxBus;
+  let voiceBus;
   let noiseBuffer;
+  let ducked = 0;
+  let clipsPlayed = 0;
   let timer = null;
   let nextTime = 0;
   let step = 0;
@@ -41,7 +47,7 @@ export function createAudio() {
     master.connect(ctx.destination);
 
     musicBus = ctx.createGain();
-    musicBus.gain.value = 0.55;
+    musicBus.gain.value = MUSIC_GAIN;
 
     // Gentle low-pass keeps the square waves from getting shrill for little ears.
     const tone = ctx.createBiquadFilter();
@@ -67,6 +73,13 @@ export function createAudio() {
     sfxBus = ctx.createGain();
     sfxBus.gain.value = 0.9;
     sfxBus.connect(master);
+
+    // Deliberately hung off the destination rather than the master gain: the 🔔
+    // button silences the music and effects, not the spoken instructions, which
+    // have their own toggle.
+    voiceBus = ctx.createGain();
+    voiceBus.gain.value = 1;
+    voiceBus.connect(ctx.destination);
 
     const len = Math.floor(ctx.sampleRate * 0.4);
     noiseBuffer = ctx.createBuffer(1, len, ctx.sampleRate);
@@ -167,6 +180,10 @@ export function createAudio() {
     get ready() {
       return started;
     },
+    /** Neural clips handed to the graph so far — read by the test hook. */
+    get clipsPlayed() {
+      return clipsPlayed;
+    },
     get enabled() {
       return enabled;
     },
@@ -205,6 +222,64 @@ export function createAudio() {
     },
     resume() {
       if (ctx?.state === 'suspended') ctx.resume().catch(() => {});
+    },
+
+    /* ----------------------------------------------------------- voice */
+
+    /**
+     * Pulls the muzak down while someone is talking. Counted rather than
+     * boolean, so overlapping lines can't leave the music stuck quiet.
+     */
+    duck(on) {
+      ducked = Math.max(0, ducked + (on ? 1 : -1));
+      if (!ctx || !musicBus) return;
+      musicBus.gain.cancelScheduledValues(ctx.currentTime);
+      musicBus.gain.setTargetAtTime(
+        ducked > 0 ? MUSIC_DUCKED : MUSIC_GAIN,
+        ctx.currentTime,
+        0.12,
+      );
+    },
+
+    /**
+     * Plays a raw mono clip from the neural voice at `playbackRate`. Returns a
+     * stop function.
+     * Web Audio rather than an <audio> element on purpose: iOS refuses blob
+     * playback that isn't tied to a gesture, but this context was unlocked back
+     * on the character picker.
+     */
+    speak(samples, sampleRate, playbackRate = 1) {
+      if (!ctx) return () => {};
+      clipsPlayed++;
+      const buffer = ctx.createBuffer(1, samples.length, sampleRate);
+      buffer.copyToChannel(samples, 0);
+
+      const src = ctx.createBufferSource();
+      src.buffer = buffer;
+      // Resampling: the caller uses this to lift the voice into a child's
+      // register, so it is pitch as much as tempo.
+      src.playbackRate.value = playbackRate;
+      src.connect(voiceBus);
+
+      let finished = false;
+      const finish = () => {
+        if (finished) return;
+        finished = true;
+        api.duck(false);
+      };
+      src.addEventListener('ended', finish);
+
+      api.duck(true);
+      src.start();
+
+      return () => {
+        finish();
+        try {
+          src.stop();
+        } catch {
+          /* already ended */
+        }
+      };
     },
 
     /* ------------------------------------------------------------- sfx */

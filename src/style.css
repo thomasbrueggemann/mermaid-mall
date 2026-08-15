@@ -229,6 +229,31 @@ body {
   filter: grayscale(1);
 }
 
+/* The pretty voice downloading. Breathes rather than spins: it can run for a
+   minute on a slow connection and a spinner that long reads as "stuck". */
+.icon-btn.busy {
+  opacity: 1;
+  filter: none;
+  animation: voice-pulse 1.4s ease-in-out infinite;
+}
+
+@keyframes voice-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(255, 190, 255, 0.5);
+  }
+  50% {
+    box-shadow: 0 0 14px 4px rgba(255, 190, 255, 0.75);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .icon-btn.busy {
+    animation: none;
+    box-shadow: 0 0 12px 3px rgba(255, 190, 255, 0.6);
+  }
+}
+
 /* --- toast --- */
 
 #toast {
