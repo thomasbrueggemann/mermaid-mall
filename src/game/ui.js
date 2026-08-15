@@ -2,8 +2,6 @@
  * HUD wiring. Deliberately wordless: emoji, numbers and colour only, since the
  * player can't read yet. Everything textual is spoken instead.
  */
-import { i18n } from './i18n.js';
-
 const SATCHEL_MAX = 14;
 
 export function createUI() {
@@ -24,11 +22,9 @@ export function createUI() {
     minimap: $('minimap'),
     btnSound: $('btn-sound'),
     btnVoice: $('btn-voice'),
-    btnLang: $('btn-lang'),
+    btnNeural: $('btn-neural'),
     btnFull: $('btn-full'),
-    btnStartLang: $('btn-start-lang'),
     btnInstall: $('btn-install'),
-    titleText: $('title-text'),
   };
 
   let toastTimer = null;
@@ -131,12 +127,17 @@ export function createUI() {
       button.classList.toggle('off', !on);
     },
 
-    syncLanguage() {
-      el.btnLang.textContent = i18n.t.flag;
-      el.btnStartLang.textContent = i18n.t.flag;
-      el.titleText.textContent = i18n.t.title;
-      document.documentElement.lang = i18n.lang;
-      document.title = i18n.t.title;
+    /**
+     * The pretty-voice button doubles as the download indicator: it pulses while
+     * the model streams in, and goes away entirely on devices that can't run it
+     * rather than offering a button that does nothing.
+     */
+    setNeuralState(state) {
+      const b = el.btnNeural;
+      b.classList.toggle('off', state !== 'ready');
+      b.classList.toggle('busy', state === 'loading');
+      b.classList.toggle('hidden', state === 'unsupported');
+      b.disabled = state === 'loading';
     },
 
     showInstall(handler) {
@@ -149,6 +150,5 @@ export function createUI() {
     },
   };
 
-  api.syncLanguage();
   return api;
 }

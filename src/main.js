@@ -11,7 +11,7 @@ import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
 import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 
-import { CAM_DIR, CAM_HEIGHT, CAM_LERP, CAM_DIST } from './game/config.js';
+import { CAM_DIR, CAM_HEIGHT, CAM_LERP, CAM_DIST, MISSION_COST_MAX } from './game/config.js';
 import { generateMall, worldToTileX, worldToTileZ } from './game/mall.js';
 import { findPath, nearestWalkable } from './game/pathfinding.js';
 import { buildWorld } from './game/world.js';
@@ -28,7 +28,13 @@ import { i18n } from './game/i18n.js';
 
 const ui = createUI();
 const audio = createAudio();
-const speech = createSpeech();
+const speech = createSpeech(audio);
+
+// The neural voice is the default, so start pulling it down the moment the page
+// opens rather than waiting for the character picker: choosing a character and
+// building the mall buys several seconds of the download for free. Until it
+// lands, everything is still spoken — just in the browser's own voice.
+if (speech.neuralPreferred) speech.enableNeural();
 
 let game = null;
 
@@ -48,11 +54,6 @@ for (const button of document.querySelectorAll('.pick')) {
     ui.showHud();
   });
 }
-
-ui.el.btnStartLang.addEventListener('click', () => {
-  i18n.toggle();
-  ui.syncLanguage();
-});
 
 /* ------------------------------------------------------------------- game */
 
@@ -208,7 +209,24 @@ async function startGame(type) {
     refreshPurse();
     audio.chime();
     idleTimer = 0;
+    // Start synthesising under cover of the chime, so the line is ready by the
+    // time the 420 ms pause is up rather than arriving a second after it.
+    const shopName = i18n.shopName(m.shop);
+    speech.preheat([
+      i18n.t.mission(shopName, i18n.itemName(m.item), m.cost),
+      i18n.t.missionShort(shopName),
+    ]);
     setTimeout(() => speakMission(), 420);
+  }
+
+  /**
+   * The lines that answer an action directly — walking up to a shop without
+   * enough diamonds — so they can't be the ones that lag.
+   */
+  function preheatReplies() {
+    speech.preheat(
+      Array.from({ length: MISSION_COST_MAX }, (_, i) => i18n.t.needMore(i + 1)),
+    );
   }
 
   function screenPositionOf(x, y, z) {
@@ -284,10 +302,19 @@ async function startGame(type) {
     if (on) speakMission();
   });
 
-  ui.el.btnLang.addEventListener('click', () => {
-    i18n.toggle();
-    ui.syncLanguage();
-    speakMission();
+  // The button is an opt-*out* now: the voice arrives on its own.
+  ui.el.btnNeural.addEventListener('click', async () => {
+    const wasReady = speech.neuralState === 'ready';
+    await speech.toggleNeural();
+    // Say something in the new voice so the switch is audible, not just visual.
+    if (!wasReady && speech.neuralState === 'ready') speakMission();
+  });
+
+  speech.onNeuralChange((state) => {
+    ui.setNeuralState(state);
+    // Fires on subscribe too, so this covers the voice having arrived while the
+    // mall was still being built.
+    if (state === 'ready') preheatReplies();
   });
 
   ui.el.btnFull.addEventListener('click', async () => {
@@ -367,6 +394,16 @@ async function startGame(type) {
     },
     get audioReady() {
       return audio.ready;
+    },
+    get voice() {
+      return {
+        state: speech.neuralState,
+        progress: speech.neuralProgress,
+        clips: audio.clipsPlayed,
+      };
+    },
+    enableNeuralVoice() {
+      return speech.enableNeural();
     },
     get satchel() {
       return ui.el.satchel.textContent;
