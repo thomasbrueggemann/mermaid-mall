@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover"
+    />
+    <title>Mermaid Mall</title>
+    <meta name="description" content="Collect sparkling diamonds and go shopping as a mermaid or a unicorn." />
+
+    <link rel="manifest" href="./manifest.webmanifest" />
+    <meta name="theme-color" content="#6a2fb5" />
+    <link rel="icon" href="./icons/icon-32.png" sizes="32x32" />
+    <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Mermaid Mall" />
+  </head>
+  <body>
+    <canvas id="scene"></canvas>
+
+    <!-- ------------------------------------------------------------ HUD -->
+    <div id="hud" class="hidden" aria-hidden="true">
+      <div id="hud-top">
+        <div id="purse" class="panel">
+          <span class="gem gem-pink">◆</span>
+          <span id="purse-count">0</span>
+        </div>
+
+        <button id="mission" class="panel" type="button">
+          <span id="mission-shop" class="mission-emoji">🍦</span>
+          <span class="mission-arrow">→</span>
+          <span id="mission-item" class="mission-emoji">🍦</span>
+          <span id="mission-price" class="price"><span class="gem gem-purple">◆</span><b>5</b></span>
+          <span class="speaker">🔊</span>
+        </button>
+
+        <div id="minimap-wrap" class="panel">
+          <canvas id="minimap" width="256" height="256"></canvas>
+        </div>
+      </div>
+
+      <div id="hud-bottom">
+        <div id="satchel" class="panel"></div>
+        <div id="hud-buttons">
+          <button id="btn-sound" class="icon-btn" type="button" title="Sound">🔔</button>
+          <button id="btn-voice" class="icon-btn" type="button" title="Voice">🗣️</button>
+          <button id="btn-lang" class="icon-btn" type="button" title="Language">🇬🇧</button>
+          <button id="btn-full" class="icon-btn" type="button" title="Fullscreen">⛶</button>
+        </div>
+      </div>
+
+      <div id="toast"></div>
+    </div>
+
+    <!-- --------------------------------------------------------- start -->
+    <div id="start">
+      <div id="start-inner">
+        <h1 id="start-title">
+          <span class="gem gem-pink">◆</span>
+          <span id="title-text">Mermaid Mall</span>
+          <span class="gem gem-purple">◆</span>
+        </h1>
+
+        <div id="picker">
+          <button class="pick" data-character="mermaid" type="button">
+            <span class="pick-emoji">🧜‍♀️</span>
+          </button>
+          <button class="pick" data-character="unicorn" type="button">
+            <span class="pick-emoji">🦄</span>
+          </button>
+        </div>
+
+        <div id="start-row">
+          <button id="btn-start-lang" class="chip" type="button">🇬🇧</button>
+          <button id="btn-install" class="chip hidden" type="button">⬇︎</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="loader" class="hidden"><div class="spinner"></div></div>
+
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>
